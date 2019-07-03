@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+        }
+        body{
+            width:100vw;
+            height:100vh;
+            display:flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #output{
+            
+        }
+    </style>
+</head>
+<body>
+    <img id="output" src="#">
+    <script>
+        let images = [];
+        let counter = 0;
+        function getImage(index,imgArray){
+            fetch('http://127.0.0.1:4000/getImage',{
+                method:'POST',
+                mode:'cors',
+                headers:{
+                    'Content-Type':'application/json'
+                },
+                body:JSON.stringify({index})
+            })
+            .then((e)=>e.json())
+                .then(({base64, last})=>{
+                    imgArray.push('data:image/png;base64, ' + base64)  
+                    if(!last){
+                        console.log(index);
+                        getImage(++index,imgArray)
+                    }
+                });
+        }
+        getImage(0,images)
+       setInterval(()=>{
+            document.getElementById('output').src=images[counter];
+            counter++;
+            if(counter>=images.length){
+                counter=0;
+            }
+            
+       },3000)
+    </script>
+</body>
+</html>
