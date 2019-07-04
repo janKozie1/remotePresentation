@@ -1,0 +1,2 @@
+defaultSlideDuration= 30
+other=  34512
