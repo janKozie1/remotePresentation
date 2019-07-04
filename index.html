@@ -55,9 +55,10 @@
         let images = [];
         let counter = 0;
         let key = null;
+        let duration = 3000;
         const MEDIA_TYPES = {   
             image:['.jpg','.png','.gif'],
-            video:['.mp4','.']
+            video:['.mp4','.webm']
         }
         let output=document.getElementById('output')
         function getImage(imgArray){
@@ -67,12 +68,17 @@
                 headers:{
                     'Content-Type':'application/json'
                 },
+                body:JSON.stringify({
+                    key
+                })
             })
             .then((e)=>e.json())
                 .then((res)=>{
+                    console.log(res)
                     if(res.key !== key){
                         images = [...res.images];
                         key = res.key;
+                        duration = res.duration <= 0 ? 3000 : res.duration * 1000;
                     }
                 }).catch((err)=>{
                     document.getElementById('err').innerHTML='Error fetching images'
@@ -81,8 +87,7 @@
         
         getImage(images)
        
-        let pres = setInterval(()=>{
-            console.log(images);
+        let pres = () => {
             if(images.length){
                 document.getElementById('err').style.display="none";
                 output.style.display='block';
@@ -93,7 +98,11 @@
                     counter=0;
                 }
             }
-        },3000)
+            setTimeout(()=>{
+                pres();
+            },duration)
+        }
+        pres();
 
         let longPolling = setInterval(()=>{
             getImage(images)

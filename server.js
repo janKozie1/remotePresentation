@@ -37,8 +37,13 @@ watcher.on('delete', function(file) {
 })
 
 app.post("/getImage",(req,res)=>{
-    let duration = getConfig('other');
-    res.json({key,images});
+    let duration = getConfig('defaultSlideDuration');
+    if(req.body.key !== key){
+        res.json({key,duration,images});
+    }else{
+        res.json({key})
+    }
+    
 })
 
 app.listen(4000,()=>{
@@ -57,12 +62,9 @@ function base64_encode(file) {
 
 function getConfig(key){    
     let config = fs.readFileSync(path.join(dirPath,'_config.txt'), 'utf8');
-    
-    let propertyIndex = config.indexOf(key)+key.length-1
-    console.log(propertyIndex)
-    console.log( config.substring(config.indexOf("=",propertyIndex)+1,config.indexOf("\n",propertyIndex)).trim())
-    return config.substring(config.indexOf("=",propertyIndex)).trim();
-    
+    let propertyIndex = config.indexOf(key)+key.length-1;
+    let endIndex = config.indexOf("\n",propertyIndex) === -1 ? config.length : config.indexOf("\n",propertyIndex)
+    return config.substring(config.indexOf("=",propertyIndex)+1,endIndex).trim();
 }
 
 function listFiles(){
@@ -87,7 +89,7 @@ function listFiles(){
 
 function compare( a, b ) {
     let temp1 = parseInt(a.fileName.replace(/[^0-9]/g,''));
-      let temp2 = parseInt(b.fileName.replace(/[^0-9]/g,''));
+    let temp2 = parseInt(b.fileName.replace(/[^0-9]/g,''));
       if ( temp1 < temp2 ){
       return -1;
     }
