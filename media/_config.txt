@@ -1,0 +1,2 @@
+defaultSlideDuration = 1
+durataionOverride = slide1 234, 

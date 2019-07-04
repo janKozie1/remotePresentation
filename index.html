@@ -1,44 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
     <style>
-        *{
-            margin:0;
-            padding:0;
+        * {
+            margin: 0;
+            padding: 0;
         }
-        body{
-            width:100vw;
-            height:100vh;
-            display:flex;
+
+        body {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
             align-items: center;
             justify-content: center;
-            background:black;
-            overflow:hidden;
-            position:relative;
+            background: black;
+            overflow: hidden;
+            position: relative;
         }
-        #output{
-            display:none;
-            width:100%;
-            
+
+        p {
+            font-size: 5rem;
+            font-family: Arial, Helvetica, sans-serif
         }
-        #err{
+
+        #image_output,
+        #video_output {
+            display: none;
+            width: 100%;
+
+        }
+
+        #err {
             position: absolute;
-            left:50%;
-            top:50%;
-            transform: translate(-50%,-50%);
-            color:white;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
         }
     </style>
 </head>
+
 <body>
-    <img id="output" src="#">
+    <img id="image_output" src="#">
+    <video id="video_output">
+
+    </video>
     <p id="err">Loading ...</p>
     <script>
-        
+
         // (function openFullscreen() {
         //     let elem = document.documentElement;
         //     if (elem.requestFullscreen) {
@@ -52,65 +66,107 @@
         //     }
         // })()
 
-        let images = [];
+        let media = [];
         let counter = 0;
         let key = null;
         let duration = 3000;
-        const MEDIA_TYPES = {   
-            image:['.jpg','.png','.gif'],
-            video:['.mp4','.webm']
+        let video_playing = false;
+        const MEDIA_TYPES = {
+            image: ['.jpg', '.png', '.gif'],
+            video: ['.mp4', '.webm']
         }
-        let output=document.getElementById('output')
-        function getImage(imgArray){
-            fetch('http://127.0.0.1:4000/getImage',{
-                method:'POST',
-                mode:'cors',
-                headers:{
-                    'Content-Type':'application/json'
+        let image_output = document.getElementById('image_output')
+        let video_output = document.getElementById('video_output')
+        function getImage(imgArray) {
+            fetch('http://127.0.0.1:4000/getImage', {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    'Content-Type': 'application/json'
                 },
-                body:JSON.stringify({
+                body: JSON.stringify({
                     key
                 })
             })
-            .then((e)=>e.json())
-                .then((res)=>{
+                .then((e) => e.json())
+                .then((res) => {
                     console.log(res)
-                    if(res.key !== key){
-                        images = [...res.images];
+                    if (res.key !== key) {
+                        media = [...res.media];
                         key = res.key;
                         duration = res.duration <= 0 ? 3000 : res.duration * 1000;
                     }
-                }).catch((err)=>{
-                    document.getElementById('err').innerHTML='Error fetching images'
+                }).catch((err) => {
+
                 });
         }
-        
-        getImage(images)
-       
+
+        getImage(media)
+
         let pres = () => {
-            if(images.length){
-                document.getElementById('err').style.display="none";
-                output.style.display='block';
-                if(images[counter])
-                    output.src='data:image/;base64, ' + images[counter].base64;
+            if (media.length) {
+                document.getElementById('err').style.display = "none";
+
+                let currentMedia = media[counter];
+
+                if (currentMedia) {
+                    let mediaType = determineType(currentMedia.fileName);
+                    if (mediaType === 'image') {
+                        video_output.style.display = "none"
+                        image_output.style.display = 'block';
+                        image_output.src = 'data:image/;base64, ' + currentMedia.base64;
+                    } else {
+                        image_output.style.display = 'none';
+                        video_output.style.display = "block";
+                        let src = document.createElement('source');
+                        src.setAttribute('src', 'data:video/mp4;base64, ' + currentMedia.base64)
+                        video_playing = true;
+                        document.getElementById('video_output').addEventListener('ended', () => {
+                            console.log("?")
+                            video_playing = false;
+                            counter++;
+                            if (counter >= media.length) {
+                                counter = 0;
+                            }
+                            video_output.pause();
+                            pres();
+                        }, false);
+                        video_output.appendChild(src);
+                        video_output.play();
+
+
+                    }
+                }
+
                 counter++;
-                if(counter>=images.length){
-                    counter=0;
+                if (counter >= media.length) {
+                    counter = 0;
                 }
             }
-            setTimeout(()=>{
-                pres();
-            },duration)
+            if (!video_playing)
+                setTimeout(() => {
+                    pres();
+                }, duration)
         }
         pres();
 
-        let longPolling = setInterval(()=>{
-            getImage(images)
-        },3000)
-        
-        
+        let longPolling = setInterval(() => {
+            getImage(media)
+        }, 3000)
 
-        
+        let determineType = (filename) => {
+            let fileExtension = filename.substr(filename.lastIndexOf('.')).toLowerCase();
+            if (MEDIA_TYPES.image.includes(fileExtension)) {
+                return 'image'
+            } else if (MEDIA_TYPES.video.includes(fileExtension)) {
+                return 'video'
+            }
+        }
+
+
+
+
     </script>
 </body>
+
 </html>

@@ -10,11 +10,11 @@ app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cors({origin:'*'}))
 
-const dirPath = path.join(__dirname,'images');
-const ACCEPTED_EXT = ['.jpg','.png','.gif']
+const dirPath = path.join(__dirname,'media');
+const ACCEPTED_EXT = ['.jpg','.png','.gif','.mp4','.webm']
 
 let watcher = hound.watch(dirPath);
-let images = [];
+let media = [];
 let key = Math.random();
 listFiles();
 
@@ -39,7 +39,7 @@ watcher.on('delete', function(file) {
 app.post("/getImage",(req,res)=>{
     let duration = getConfig('defaultSlideDuration');
     if(req.body.key !== key){
-        res.json({key,duration,images});
+        res.json({key,duration,media});
     }else{
         res.json({key})
     }
@@ -71,7 +71,7 @@ function listFiles(){
     fs.readdir(dirPath, (err,files)=>{
         if(err){
             console.log('unable to scan: ' + err)
-            images =  [];
+            media =  [];
         }else{
             let temp = files.filter((e)=>{
                 return ACCEPTED_EXT.includes(e.substr(e.lastIndexOf('.')).toLowerCase())
@@ -82,7 +82,7 @@ function listFiles(){
                 if(base64)
                     return {fileName:e,base64}
             })
-            images = [...temp.sort(compare)]
+            media = [...temp.sort(compare)]
         }
     })
 }
