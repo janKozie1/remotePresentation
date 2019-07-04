@@ -18,49 +18,74 @@
             justify-content: center;
             background:black;
             overflow:hidden;
+            position:relative;
         }
         #output{
             display:none;
+            width:100%;
+            
+        }
+        #err{
+            position: absolute;
+            left:50%;
+            top:50%;
+            transform: translate(-50%,-50%);
+            color:white;
         }
     </style>
 </head>
 <body>
     <img id="output" src="#">
+    <p id="err">Loading ...</p>
     <script>
         let images = [];
         let counter = 0;
+        let key = null;
+        
         let output=document.getElementById('output')
-        function getImage(index,imgArray){
+        function getImage(imgArray){
             fetch('http://127.0.0.1:4000/getImage',{
                 method:'POST',
                 mode:'cors',
                 headers:{
                     'Content-Type':'application/json'
                 },
-                body:JSON.stringify({index})
             })
             .then((e)=>e.json())
-                .then(({base64, last})=>{
-                    imgArray.push('data:image/png;base64, ' + base64)  
-                    if(!last){
-                        console.log(index);
-                        getImage(++index,imgArray)
+                .then((res)=>{
+                    if(res.key !== key){
+                        images = [...res.images];
+                        key = res.key;
                     }
+                }).catch((err)=>{
+                    document.getElementById('err').innerHTML='Error fetching images'
                 });
         }
         
-        getImage(0,images)
+        getImage(images)
        
-        setInterval(()=>{
+        let pres = setInterval(()=>{
+            console.log(images);
             if(images.length){
+                document.getElementById('err').style.display="none";
                 output.style.display='block';
+                if(images[counter])
+                    output.src='data:image/png;base64, ' + images[counter].base64;
+                counter++;
+                if(counter>=images.length){
+                    counter=0;
+                }
             }
-            output.src=images[counter];
-            counter++;
-            if(counter>=images.length){
-                counter=0;
-            }
-       },3000)
+           
+        },10000)
+
+        let longPolling = setInterval(()=>{
+            getImage(images)
+        },3000)
+        
+        
+
+        
     </script>
 </body>
 </html>
