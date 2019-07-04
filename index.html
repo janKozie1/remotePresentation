@@ -77,6 +77,16 @@
         }
         let image_output = document.getElementById('image_output')
         let video_output = document.getElementById('video_output')
+        video_output.addEventListener('ended', () => {
+            counter++;
+            if (counter >= media.length) {
+                counter = 0;
+            }
+            video_output.pause();
+            video_output.innerHTML = "";
+            video_playing = false;
+            pres();
+        })
         function getImage(imgArray) {
             fetch('http://127.0.0.1:4000/getImage', {
                 method: 'POST',
@@ -110,37 +120,28 @@
                 let currentMedia = media[counter];
 
                 if (currentMedia) {
-                    let mediaType = determineType(currentMedia.fileName);
+                    let fileExtension = currentMedia.fileName.substr(currentMedia.fileName.lastIndexOf('.')).toLowerCase();
+                    let mediaType = determineType(fileExtension);
                     if (mediaType === 'image') {
                         video_output.style.display = "none"
                         image_output.style.display = 'block';
-                        image_output.src = 'data:image/;base64, ' + currentMedia.base64;
+                        image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64;
+                        counter++;
+                        if (counter >= media.length) {
+                            counter = 0;
+                        }
                     } else {
                         image_output.style.display = 'none';
                         video_output.style.display = "block";
+                        console.log(currentMedia.fileName)
                         let src = document.createElement('source');
-                        src.setAttribute('src', 'data:video/mp4;base64, ' + currentMedia.base64)
+                        src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64)
+                        src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
                         video_playing = true;
-                        document.getElementById('video_output').addEventListener('ended', () => {
-                            console.log("?")
-                            video_playing = false;
-                            counter++;
-                            if (counter >= media.length) {
-                                counter = 0;
-                            }
-                            video_output.pause();
-                            pres();
-                        }, false);
                         video_output.appendChild(src);
+                        video_output.load();
                         video_output.play();
-
-
                     }
-                }
-
-                counter++;
-                if (counter >= media.length) {
-                    counter = 0;
                 }
             }
             if (!video_playing)
@@ -154,8 +155,8 @@
             getImage(media)
         }, 3000)
 
-        let determineType = (filename) => {
-            let fileExtension = filename.substr(filename.lastIndexOf('.')).toLowerCase();
+        let determineType = (fileExtension) => {
+
             if (MEDIA_TYPES.image.includes(fileExtension)) {
                 return 'image'
             } else if (MEDIA_TYPES.video.includes(fileExtension)) {
