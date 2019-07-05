@@ -37,7 +37,6 @@ app.get('/', (req, res) => {
 })
 
 app.get('/defaultImage',(req,res)=>{
-    console.log("?")
     res.sendFile(path.join(__dirname,'velvet_care.jpg'))
 })
 app.post("/getImages", (req, res) => {
@@ -65,10 +64,15 @@ function base64_encode(file) {
 }
 
 function getConfig(key) {
-    let config = fs.readFileSync(path.join(dirPath, '_config.txt'), 'utf8');
-    let propertyIndex = config.indexOf(key) + key.length - 1;
-    let endIndex = config.indexOf("\n", propertyIndex) === -1 ? config.length : config.indexOf("\n", propertyIndex)
-    return config.substring(config.indexOf("=", propertyIndex) + 1, endIndex).trim();
+    try{
+        let config = fs.readFileSync(path.join(dirPath, '_config.txt'), 'utf8');
+        let propertyIndex = config.indexOf(key) + key.length - 1;
+        let endIndex = config.indexOf("\n", propertyIndex) === -1 ? config.length : config.indexOf("\n", propertyIndex)
+        return config.substring(config.indexOf("=", propertyIndex) + 1, endIndex).trim();
+    }catch(err){
+        return '';
+    }
+    
 }
 
 function listFiles() {
@@ -111,6 +115,7 @@ function compare(a, b) {
 } 
 function findIndex(name){
 	let firstDigit = name.match(/\d/);
-	let index = name.indexOf(firstDigit);
-	return parseInt(name.substring(index,name.indexOf('_')));
+    let index = name.indexOf(firstDigit);
+    let lastIndex = ~name.indexOf('_') ? name.indexOf('_') : name.lastIndexOf('.');
+	return parseInt(name.substring(index,lastIndex));
 }

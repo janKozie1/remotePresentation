@@ -12,7 +12,8 @@
             padding: 0;
         }
 
-        body {
+        body,
+        #wrapper {
             width: 100vw;
             height: 100vh;
             display: flex;
@@ -20,44 +21,40 @@
             justify-content: center;
             overflow: hidden;
             position: relative;
-            background:black;
+            background: black;
+        }
+
+        #wrapper {
+            opacity: 1;
+            transition: opacity 2s ease-in-out;
         }
 
         #video_output {
             display: none;
             width: 100%;
+
         }
-        #image_output{
-            width:100%;
+
+        #image_output {
+            width: 100%;
         }
     </style>
 </head>
 
 <body>
-    <img id="image_output" src="/defaultImage">
-    <video id="video_output">
+    <div id="wrapper">
+        <img id="image_output" src="/defaultImage">
+        <video id="video_output">
+    </div>
+
 
     </video>
     <script>
-
-        // (function openFullscreen() {
-        //     let elem = document.documentElement;
-        //     if (elem.requestFullscreen) {
-        //         elem.requestFullscreen();
-        //     } else if (elem.mozRequestFullScreen) { 
-        //         elem.mozRequestFullScreen();
-        //     } else if (elem.webkitRequestFullscreen) {
-        //         elem.webkitRequestFullscreen();
-        //     } else if (elem.msRequestFullscreen) {
-        //         elem.msRequestFullscreen();
-        //     }
-        // })()
-
         let media = []
         let counter = 0
         let key = null
         let defaultDuration = 3000
-        let duration = 1000
+        let duration;
         let video_playing = false
         const MEDIA_TYPES = {
             image: ['.jpg', '.png', '.gif'],
@@ -65,6 +62,7 @@
         }
         let image_output = document.getElementById('image_output')
         let video_output = document.getElementById('video_output')
+        let wrapper = document.getElementById('wrapper');
         video_output.addEventListener('ended', handleVideoEnd)
         getImage(media)
         pres();
@@ -75,9 +73,18 @@
                 counter = 0
             }
             video_output.pause()
-            video_output.innerHTML = ""
-            video_playing = false
-            pres()
+           
+
+            wrapper.style.opacity = 0;
+            setTimeout(() => {
+                video_output.innerHTML = ""
+                if (!media.length) {
+                    video_output.style.display = 'none'
+                    image_output.style.display = 'block';
+                }
+                video_playing = false
+                pres()
+            }, 2000)
         }
 
         function getImage(imgArray) {
@@ -93,44 +100,41 @@
             })
                 .then((e) => e.json())
                 .then((res) => {
-                    console.log(res)
                     if (res.key !== key) {
                         media = [...res.media]
                         key = res.key
                         defaultDuration = res.defaultDuration <= 0 ? 3000 : res.defaultDuration * 1000
-                        if(!media.length){
-                            image_output.style.display='none';
-                            video_output.style.display="none";
-                        }else{
-                            image_output.style.display='block';
-                           
+                        if (!media.length) {
+                            image_output.src = '/defaultImage'
+                        } else if (!video_playing) {
+                            image_output.style.display = 'block';
                         }
                     }
                 }).catch((err) => {
-
+                    media = [];
                 });
         }
 
+        function pres() {
 
-        function pres(){
             if (media.length) {
-
-
                 let currentMedia = media[counter]
-                
                 if (currentMedia) {
                     try {
-                        duration = currentMedia.params.duration*1000;
+                        duration = currentMedia.params.duration * 1000;
                         let fileExtension = currentMedia.fileName.substr(currentMedia.fileName.lastIndexOf('.')).toLowerCase();
                         let mediaType = determineType(fileExtension);
                         if (mediaType === 'image') {
                             video_output.style.display = "none"
                             image_output.style.display = 'block'
                             image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64
+
                             counter++
                             if (counter >= media.length) {
                                 counter = 0
                             }
+                            console.log("?", Date.now())
+                            wrapper.style.opacity = 1;
                         } else {
                             image_output.style.display = 'none'
                             video_output.style.display = "block"
@@ -140,23 +144,29 @@
                             video_playing = true
                             video_output.appendChild(src);
                             video_output.load()
+                            wrapper.style.opacity = 1;
                             video_output.play()
                         }
                     } catch (err) {
-                        if (video_playing){
+                        if (video_playing) {
                             handleVideoEnd()
                         }
                     }
 
-                }else{
+                } else {
                     counter = 0
                 }
             }
             if (!video_playing)
                 setTimeout(() => {
-                    pres()
+                    wrapper.style.opacity = 0;
+                    setTimeout(() => {
+                        pres()
+                    }, 2000)
+
                 }, duration || defaultDuration)
         }
+
         let determineType = (fileExtension) => {
 
             if (MEDIA_TYPES.image.includes(fileExtension)) {
@@ -169,11 +179,6 @@
         let longPolling = setInterval(() => {
             getImage(media)
         }, 3000)
-
-
-
-
-
 
     </script>
 </body>
