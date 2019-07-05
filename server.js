@@ -20,11 +20,6 @@ let key = Math.random();
 let defaultDuration = getConfig('defaultSlideDuration');
 listFiles();
 
-
-
-
-
-
 watcher.on('create', function (file, stats) {
     listFiles();
     key = Math.random();
@@ -40,18 +35,23 @@ watcher.on('delete', function (file) {
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 })
+
+app.get('/defaultImage',(req,res)=>{
+    console.log("?")
+    res.sendFile(path.join(__dirname,'velvet_care.jpg'))
+})
 app.post("/getImages", (req, res) => {
-    let duration = getConfig('defaultSlideDuration');
+    defaultDuration = getConfig('defaultSlideDuration');
     if (req.body.key !== key) {
-        res.json({ key, duration, media });
+        res.json({ key, defaultDuration, media });
     } else {
         res.json({ key })
     }
 
 })
 
-app.listen(4000, () => {
-    console.log('Server has started on:\n' + ip.address() + ':4000')
+app.listen(8080, () => {
+    console.log('Server has started on:\n' + ip.address() + ':8080')
 })
 
 function base64_encode(file) {

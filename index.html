@@ -18,39 +18,26 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: black;
             overflow: hidden;
             position: relative;
+            background:black;
         }
 
-        p {
-            font-size: 5rem;
-            font-family: Arial, Helvetica, sans-serif
-        }
-
-        #image_output,
         #video_output {
             display: none;
             width: 100%;
-
         }
-
-        #err {
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
+        #image_output{
+            width:100%;
         }
     </style>
 </head>
 
 <body>
-    <img id="image_output" src="#">
+    <img id="image_output" src="/defaultImage">
     <video id="video_output">
 
     </video>
-    <p id="err">Loading ...</p>
     <script>
 
         // (function openFullscreen() {
@@ -66,11 +53,12 @@
         //     }
         // })()
 
-        let media = [];
-        let counter = 0;
-        let key = null;
-        let duration = 3000;
-        let video_playing = false;
+        let media = []
+        let counter = 0
+        let key = null
+        let defaultDuration = 3000
+        let duration = 1000
+        let video_playing = false
         const MEDIA_TYPES = {
             image: ['.jpg', '.png', '.gif'],
             video: ['.mp4', '.webm']
@@ -82,18 +70,18 @@
         pres();
 
         function handleVideoEnd() {
-            counter++;
+            counter++
             if (counter >= media.length) {
-                counter = 0;
+                counter = 0
             }
-            video_output.pause();
-            video_output.innerHTML = "";
-            video_playing = false;
-            pres();
+            video_output.pause()
+            video_output.innerHTML = ""
+            video_playing = false
+            pres()
         }
 
         function getImage(imgArray) {
-            fetch('http://127.0.0.1:4000/getImages', {
+            fetch('http://127.0.0.1:8080/getImages', {
                 method: 'POST',
                 mode: 'cors',
                 headers: {
@@ -107,9 +95,16 @@
                 .then((res) => {
                     console.log(res)
                     if (res.key !== key) {
-                        media = [...res.media];
-                        key = res.key;
-                        duration = res.duration <= 0 ? 3000 : res.duration * 1000;
+                        media = [...res.media]
+                        key = res.key
+                        defaultDuration = res.defaultDuration <= 0 ? 3000 : res.defaultDuration * 1000
+                        if(!media.length){
+                            image_output.style.display='none';
+                            video_output.style.display="none";
+                        }else{
+                            image_output.style.display='block';
+                           
+                        }
                     }
                 }).catch((err) => {
 
@@ -119,47 +114,48 @@
 
         function pres(){
             if (media.length) {
-                document.getElementById('err').style.display = "none";
 
-                let currentMedia = media[counter];
-                console.log(currentMedia)
+
+                let currentMedia = media[counter]
+                
                 if (currentMedia) {
                     try {
+                        duration = currentMedia.params.duration*1000;
                         let fileExtension = currentMedia.fileName.substr(currentMedia.fileName.lastIndexOf('.')).toLowerCase();
                         let mediaType = determineType(fileExtension);
                         if (mediaType === 'image') {
                             video_output.style.display = "none"
-                            image_output.style.display = 'block';
-                            image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64;
-                            counter++;
+                            image_output.style.display = 'block'
+                            image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64
+                            counter++
                             if (counter >= media.length) {
-                                counter = 0;
+                                counter = 0
                             }
                         } else {
-                            image_output.style.display = 'none';
-                            video_output.style.display = "block";
-                            let src = document.createElement('source');
+                            image_output.style.display = 'none'
+                            video_output.style.display = "block"
+                            let src = document.createElement('source')
                             src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64)
                             src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
-                            video_playing = true;
+                            video_playing = true
                             video_output.appendChild(src);
-                            video_output.load();
-                            video_output.play();
+                            video_output.load()
+                            video_output.play()
                         }
                     } catch (err) {
                         if (video_playing){
-                            handleVideoEnd();
+                            handleVideoEnd()
                         }
                     }
 
                 }else{
-                    counter = 0;
+                    counter = 0
                 }
             }
             if (!video_playing)
                 setTimeout(() => {
-                    pres();
-                }, duration)
+                    pres()
+                }, duration || defaultDuration)
         }
         let determineType = (fileExtension) => {
 
