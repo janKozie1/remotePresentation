@@ -77,7 +77,11 @@
         }
         let image_output = document.getElementById('image_output')
         let video_output = document.getElementById('video_output')
-        video_output.addEventListener('ended', () => {
+        video_output.addEventListener('ended', handleVideoEnd)
+        getImage(media)
+        pres();
+
+        function handleVideoEnd() {
             counter++;
             if (counter >= media.length) {
                 counter = 0;
@@ -86,9 +90,10 @@
             video_output.innerHTML = "";
             video_playing = false;
             pres();
-        })
+        }
+
         function getImage(imgArray) {
-            fetch('http://127.0.0.1:4000/getImage', {
+            fetch('http://127.0.0.1:4000/getImages', {
                 method: 'POST',
                 mode: 'cors',
                 headers: {
@@ -111,37 +116,44 @@
                 });
         }
 
-        getImage(media)
 
-        let pres = () => {
+        function pres(){
             if (media.length) {
                 document.getElementById('err').style.display = "none";
 
                 let currentMedia = media[counter];
-
+                console.log(currentMedia)
                 if (currentMedia) {
-                    let fileExtension = currentMedia.fileName.substr(currentMedia.fileName.lastIndexOf('.')).toLowerCase();
-                    let mediaType = determineType(fileExtension);
-                    if (mediaType === 'image') {
-                        video_output.style.display = "none"
-                        image_output.style.display = 'block';
-                        image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64;
-                        counter++;
-                        if (counter >= media.length) {
-                            counter = 0;
+                    try {
+                        let fileExtension = currentMedia.fileName.substr(currentMedia.fileName.lastIndexOf('.')).toLowerCase();
+                        let mediaType = determineType(fileExtension);
+                        if (mediaType === 'image') {
+                            video_output.style.display = "none"
+                            image_output.style.display = 'block';
+                            image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64;
+                            counter++;
+                            if (counter >= media.length) {
+                                counter = 0;
+                            }
+                        } else {
+                            image_output.style.display = 'none';
+                            video_output.style.display = "block";
+                            let src = document.createElement('source');
+                            src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64)
+                            src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
+                            video_playing = true;
+                            video_output.appendChild(src);
+                            video_output.load();
+                            video_output.play();
                         }
-                    } else {
-                        image_output.style.display = 'none';
-                        video_output.style.display = "block";
-                        console.log(currentMedia.fileName)
-                        let src = document.createElement('source');
-                        src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64)
-                        src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
-                        video_playing = true;
-                        video_output.appendChild(src);
-                        video_output.load();
-                        video_output.play();
+                    } catch (err) {
+                        if (video_playing){
+                            handleVideoEnd();
+                        }
                     }
+
+                }else{
+                    counter = 0;
                 }
             }
             if (!video_playing)
@@ -149,12 +161,6 @@
                     pres();
                 }, duration)
         }
-        pres();
-
-        let longPolling = setInterval(() => {
-            getImage(media)
-        }, 3000)
-
         let determineType = (fileExtension) => {
 
             if (MEDIA_TYPES.image.includes(fileExtension)) {
@@ -163,6 +169,12 @@
                 return 'video'
             }
         }
+
+        let longPolling = setInterval(() => {
+            getImage(media)
+        }, 3000)
+
+
 
 
 

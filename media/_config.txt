@@ -1,2 +1,1 @@
-defaultSlideDuration = 5
-durataionOverride = slide1 234, 
+defaultSlideDuration = 3
