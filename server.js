@@ -114,7 +114,7 @@ function compare(a, b) {
     }
 } 
 function findIndex(name){
-	let firstDigit = name.match(/\d/);
+    let firstDigit = name.match(/\d/) === -1 ? name[0] : name.match(/\d/);
     let index = name.indexOf(firstDigit);
     let lastIndex = ~name.indexOf('_') ? name.indexOf('_') : name.lastIndexOf('.');
 	return parseInt(name.substring(index,lastIndex));

@@ -54,7 +54,8 @@
         let counter = 0
         let key = null
         let defaultDuration = 3000
-        let duration;
+        let duration
+        let presPlaying = false;
         let video_playing = false
         const MEDIA_TYPES = {
             image: ['.jpg', '.png', '.gif'],
@@ -64,30 +65,21 @@
         let video_output = document.getElementById('video_output')
         let wrapper = document.getElementById('wrapper');
         video_output.addEventListener('ended', handleVideoEnd)
-        getImage(media)
-        pres();
+        getImage()
+
+        //pres();
 
         function handleVideoEnd() {
-            counter++
-            if (counter >= media.length) {
-                counter = 0
-            }
             video_output.pause()
-           
-
             wrapper.style.opacity = 0;
             setTimeout(() => {
-                video_output.innerHTML = ""
-                if (!media.length) {
-                    video_output.style.display = 'none'
-                    image_output.style.display = 'block';
-                }
+                video_output.style.display = 'none'
                 video_playing = false
-                pres()
+                playNextSlide(media[counter])
             }, 2000)
         }
 
-        function getImage(imgArray) {
+        function getImage() {
             fetch('http://127.0.0.1:8080/getImages', {
                 method: 'POST',
                 mode: 'cors',
@@ -105,9 +97,9 @@
                         key = res.key
                         defaultDuration = res.defaultDuration <= 0 ? 3000 : res.defaultDuration * 1000
                         if (!media.length) {
-                            image_output.src = '/defaultImage'
-                        } else if (!video_playing) {
-                            image_output.style.display = 'block';
+                           
+                        } else if (!video_playing && !presPlaying) {
+                            playNextSlide(media[counter])
                         }
                     }
                 }).catch((err) => {
@@ -115,60 +107,73 @@
                 });
         }
 
-        function pres() {
 
-            if (media.length) {
-                let currentMedia = media[counter]
-                if (currentMedia) {
-                    try {
-                        duration = currentMedia.params.duration * 1000;
-                        let fileExtension = currentMedia.fileName.substr(currentMedia.fileName.lastIndexOf('.')).toLowerCase();
-                        let mediaType = determineType(fileExtension);
-                        if (mediaType === 'image') {
-                            video_output.style.display = "none"
-                            image_output.style.display = 'block'
-                            image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64
+        let playNextSlide = (file) => {
+            if (file) {
+                try {
+                    video_output.pause();
+                } catch (err) {
 
-                            counter++
-                            if (counter >= media.length) {
-                                counter = 0
-                            }
-                            console.log("?", Date.now())
-                            wrapper.style.opacity = 1;
-                        } else {
-                            image_output.style.display = 'none'
-                            video_output.style.display = "block"
-                            let src = document.createElement('source')
-                            src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64)
-                            src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
-                            video_playing = true
-                            video_output.appendChild(src);
-                            video_output.load()
-                            wrapper.style.opacity = 1;
-                            video_output.play()
-                        }
-                    } catch (err) {
-                        if (video_playing) {
-                            handleVideoEnd()
-                        }
-                    }
-
-                } else {
-                    counter = 0
                 }
-            }
-            if (!video_playing)
+                presPlaying = true;
+                wrapper.style.opacity = 0;
                 setTimeout(() => {
-                    wrapper.style.opacity = 0;
+                    let fileExtension = file.fileName.substr(file.fileName.lastIndexOf('.')).toLowerCase();
+                    let fileType = determineType(fileExtension);
+                    duration = file.params.duration * 1000;
+                    if (fileType === 'image') {
+                        video_output.style.display = "none"
+                        video_output.innerHTML = '';
+                        image_output.style.display = 'block'
+                        image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + file.base64;
+                    } else if (fileType === 'video') {
+                        image_output.style.display = 'none'
+                        video_output.style.display = "block"
+                        let src = document.createElement('source')
+                        src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + file.base64)
+                        src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
+                        video_playing = true
+                        video_output.appendChild(src);
+                        video_output.load()
+                    }
+                    wrapper.style.opacity = 1;
                     setTimeout(() => {
-                        pres()
+                        counter++;
+                        if (!media[counter]) {
+                            counter = 0;
+                        }
+                        if (!video_playing) {
+                            setTimeout(() => {
+                                playNextSlide(media[counter])
+                            }, duration || defaultDuration)
+                        }
                     }, 2000)
 
-                }, duration || defaultDuration)
+                }, 2000)
+            } else {
+                counter = 0;
+                if (media[counter]) {
+                    playNextSlide(media[counter])
+                } else {
+                    handleDefault();
+                }
+            }
         }
-
+        let handleDefault = () => {
+            if (image_output.src != '/defaultImage') {
+                wrapper.style.opacity = 0;
+                video_output.pause();
+                video_output.innerHTML = '';
+                setTimeout(() => {
+                    video_output.style.display = "none";
+                    image_output.style.display = "block";
+                    image_output.src = "/defaultImage";
+                    presPlaying = false;
+                    wrapper.style.opacity = 1;
+                }, 2000)
+            }
+        }
         let determineType = (fileExtension) => {
-
             if (MEDIA_TYPES.image.includes(fileExtension)) {
                 return 'image'
             } else if (MEDIA_TYPES.video.includes(fileExtension)) {
@@ -177,9 +182,69 @@
         }
 
         let longPolling = setInterval(() => {
-            getImage(media)
+            getImage()
         }, 3000)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // function pres() {
+        //     if (media.length) {
+        //         let currentMedia = media[counter]
+        //         if (currentMedia) {
+        //             try {
+        //                 duration = currentMedia.params.duration * 1000;
+        //                 let fileExtension = currentMedia.fileName.substr(currentMedia.fileName.lastIndexOf('.')).toLowerCase();
+        //                 let mediaType = determineType(fileExtension);
+        //                 if (mediaType === 'image') {
+        //                     video_output.style.display = "none"
+        //                     image_output.style.display = 'block'
+        //                     image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64
+        //                     counter++
+        //                     if (counter >= media.length) {
+        //                         counter = 0
+        //                     }
+        //                     wrapper.style.opacity = 1;
+        //                 } else {
+        //                     image_output.style.display = 'none'
+        //                     video_output.style.display = "block"
+        //                     let src = document.createElement('source')
+        //                     src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64)
+        //                     src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
+        //                     video_playing = true
+        //                     video_output.appendChild(src);
+        //                     video_output.load()
+        //                     wrapper.style.opacity = 1;
+        //                     video_output.play()
+        //                 }
+        //             } catch (err) {
+        //                 if (video_playing) {
+        //                     handleVideoEnd()
+        //                 }
+        //             }
+        //         } else {
+        //             counter = 0
+        //         }
+        //     }
+        //     if (!video_playing)
+        //         setTimeout(() => {
+        //             wrapper.style.opacity = 0;
+        //             setTimeout(() => {
+        //                 pres()
+        //             }, 2000)
+
+        //         }, duration || defaultDuration)
+        // }
     </script>
 </body>
 
