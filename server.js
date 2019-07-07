@@ -11,7 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors({ origin: '*' }))
 
 const dirPath = path.join(__dirname, 'Media');
-const ACCEPTED_EXT = ['.jpg', '.png', '.gif', '.mp4', '.webm']
+const ACCEPTED_EXT = ['.jpg', '.jpeg', '.png', '.gif', '.mp4', '.webm']
 const POSSIBLE_PARAMS = ['duration', 'transition'];
 
 let watcher = hound.watch(dirPath);
@@ -58,7 +58,7 @@ function base64_encode(file) {
         let bin = fs.readFileSync(file);
         return Buffer.from(bin).toString('base64');
     } catch (err) {
-        return '';
+        base64_encode(file)
     }
 
 }
@@ -81,12 +81,18 @@ function listFiles() {
             console.log('unable to scan: ' + err)
             media = [];
         } else {
+            
             let temp = files.filter((e) => {
                 return ACCEPTED_EXT.includes(e.substr(e.lastIndexOf('.')).toLowerCase())
             })
 
             temp = temp.map((e) => {
-                let base64 = base64_encode(path.join(dirPath, e));
+                let base64 = ''
+                if(!~e.indexOf("/")){
+                    base64 =  base64_encode(path.join(dirPath, e));
+                }else{
+                    base64 = base64_encode(e);
+                }
                 let unparsed = e.substring(e.indexOf('_') + 1, e.lastIndexOf('.')).split('_').map((e) => {
                     return parseInt(e)
                 });
@@ -94,8 +100,7 @@ function listFiles() {
                     unparsed[index] ? prev[current] = unparsed[index] : '';
                     return prev;
                 }, {})
-                if (base64)
-                    return { fileName: e, params, base64 }
+                return { fileName: e, params, base64 }
             })
             media = [...temp.sort(compare)]
         }

@@ -58,7 +58,7 @@
         let presPlaying = false;
         let video_playing = false
         const MEDIA_TYPES = {
-            image: ['.jpg', '.png', '.gif'],
+            image: ['.jpg', '.jpeg', '.png', '.gif'],
             video: ['.mp4', '.webm']
         }
         let image_output = document.getElementById('image_output')
@@ -80,7 +80,7 @@
         }
 
         function getImage() {
-            fetch('http://127.0.0.1:8080/getImages', {
+            fetch('/getImages', {
                 method: 'POST',
                 mode: 'cors',
                 headers: {
@@ -92,6 +92,7 @@
             })
                 .then((e) => e.json())
                 .then((res) => {
+                    console.log(res)
                     if (res.key !== key) {
                         media = [...res.media]
                         key = res.key
@@ -103,6 +104,7 @@
                         }
                     }
                 }).catch((err) => {
+                    console.log(err)
                     media = [];
                 });
         }
@@ -135,6 +137,12 @@
                         video_playing = true
                         video_output.appendChild(src);
                         video_output.load()
+                        try{
+                            video_output.play()
+                        }catch(err){
+
+                        }
+                        
                     }
                     wrapper.style.opacity = 1;
                     setTimeout(() => {
