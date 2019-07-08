@@ -10,6 +10,7 @@
         * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
 
         }
 
@@ -35,14 +36,17 @@
             transition: opacity 2s ease-in-out;
         }
 
-        #video_output {
+        #wrapper > * {
             display: none;
             width: 100%;
-
         }
 
         #image_output {
-            width: 100%;
+            display:block;
+        }
+        #data_output{
+            height:100%;
+            background:white;
         }
     </style>
 </head>
@@ -50,11 +54,12 @@
 <body>
     <div id="wrapper">
         <img id="image_output" src="/defaultImage">
-        <video id="video_output">
+        <video id="video_output"></video>
+        <div id="data_output">a</div>
     </div>
 
 
-    </video>
+    
     <script>
         let media = []
         let counter = 0
@@ -66,10 +71,12 @@
         let isDefault = true;
         const MEDIA_TYPES = {
             image: ['.jpg', '.jpeg', '.png', '.gif'],
-            video: ['.mp4', '.webm']
+            video: ['.mp4', '.webm'],
+            data: ['.data']
         }
         let image_output = document.getElementById('image_output')
         let video_output = document.getElementById('video_output')
+        let data_output = document.getElementById('data_output')
         let wrapper = document.getElementById('wrapper');
 
         let handleVideoEnd = () => {
@@ -93,8 +100,6 @@
         video_output.addEventListener('ended', handleVideoEnd)
         getImage()
 
-        
-
         function getImage() {
             fetch('/getImages', {
                 method: 'POST',
@@ -108,12 +113,10 @@
             })
                 .then((e) => e.json())
                 .then((res) => {
-                    console.log(res)
                     if (res.key !== key) {
-                        media = [...res.media]
+                        media = [{fileName:'.data', base64:'a',params:{duration:3}},...res.media]
                         key = res.key
                         defaultDuration = res.defaultDuration <= 0 ? 3000 : res.defaultDuration * 1000
-                        console.log(video_playing, presPlaying)
                         if (!media.length) {
 
                         } else if (!video_playing && !presPlaying) {
@@ -129,7 +132,7 @@
 
         let playNextSlide = (file) => {
             if (file) {
-                if (!file.base64 || new RegExp("^[A\s]+$").test(file.base64) || (file.base64.match(/A/g) || []).length > file.base64.length/1.4){
+                if (!file.base64 || new RegExp("^[A\s]+$").test(file.base64) || (file.base64.match(/A/g) || []).length > file.base64.length/1.1){
                     key=Math.random();
                     counter++;
                     if (media[counter]) {
@@ -142,10 +145,8 @@
                         handleDefault();
                     }
                 } else {
-                    
                     presPlaying = true;
                     wrapper.style.opacity = 0;
-                    console.log("?")
                     setTimeout(async() => {
                         let fileExtension = file.fileName.substr(file.fileName.lastIndexOf('.')).toLowerCase();
                         let fileType = determineType(fileExtension);
@@ -169,16 +170,20 @@
                             video_output.load()
                             wrapper.style.opacity = 1;
                             try {
-                                await video_output.play().catch(err=>{
+                                video_output.play().then(e=>{
+                                    video_playing=true;
+                                }).catch(err =>{
                                     console.log(err)
-                                    if(err){
-                                        handleVideoEnd();
-                                    }
                                 })
-                                video_playing = true;
                             } catch (err) {
                                 video_playing = false;
                             }
+                        }else if(fileType === 'data'){
+                           
+                            image_output.style.display="none";
+                            video_output.style.display="none";
+                            wrapper.style.opacity = 1;
+                            data_output.style.display="flex";
                         }
                         setTimeout(() => {
                             counter++;
@@ -207,9 +212,7 @@
         
         let handleDefault = (err = '') => {
             presPlaying = false;
-            console.log(1,presPlaying)
             if (!isDefault) {
-                console.log(2,presPlaying)
                 counter = 0;
                 wrapper.style.opacity = 0;
                 video_output.pause();
@@ -224,7 +227,6 @@
                         image_output.src="#"
                     }
                     isDefault = true;
-                    console.log(3,presPlaying)
                     wrapper.style.opacity = 1;
                 }, 2000)
             }
@@ -234,7 +236,10 @@
                 return 'image'
             } else if (MEDIA_TYPES.video.includes(fileExtension)) {
                 return 'video'
+            }else if (MEDIA_TYPES.data.includes(fileExtension)) {
+                return 'data'
             }
+            
         }
 
         let longPolling = setInterval(() => {
