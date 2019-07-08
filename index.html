@@ -75,6 +75,7 @@
             setTimeout(() => {
                 video_output.style.display = 'none'
                 video_playing = false
+                video_output.innerHTML=''
                 playNextSlide(media[counter])
             }, 2000)
         }
@@ -134,13 +135,15 @@
                         let src = document.createElement('source')
                         src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + file.base64)
                         src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
-                        video_playing = true
+                        
                         video_output.appendChild(src);
                         video_output.load()
                         try{
                             video_output.play()
+                            video_playing = true;
                         }catch(err){
-
+                            video_playing=false;
+                            console.log(err + "? ")
                         }
                         
                     }
