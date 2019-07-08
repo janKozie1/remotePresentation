@@ -1,1 +1,1 @@
-defaultSlideDuration = 5
+defaultSlideDuration = 1

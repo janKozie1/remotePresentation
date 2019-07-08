@@ -42,23 +42,26 @@ app.get('/defaultImage',(req,res)=>{
 app.post("/getImages", (req, res) => {
     defaultDuration = getConfig('defaultSlideDuration');
     if (req.body.key !== key) {
+        listFiles();
         res.json({ key, defaultDuration, media });
     } else {
         res.json({ key })
     }
-
 })
 
 app.listen(8080, () => {
     console.log('Server has started on:\n' + ip.address() + ':8080')
 })
 
+
+
 function base64_encode(file) {
+    console.log(file)
     try {
         let bin = fs.readFileSync(file);
         return Buffer.from(bin).toString('base64');
     } catch (err) {
-        base64_encode(file)
+        return '';
     }
 
 }
@@ -76,6 +79,7 @@ function getConfig(key) {
 }
 
 function listFiles() {
+    console.log("-------")
     fs.readdir(dirPath, (err, files) => {
         if (err) {
             console.log('unable to scan: ' + err)

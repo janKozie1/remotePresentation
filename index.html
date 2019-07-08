@@ -10,6 +10,12 @@
         * {
             margin: 0;
             padding: 0;
+
+        }
+
+        html>* {
+            transition: opacity 2s ease-in-out;
+            -moz-transition: opacity 2s ease-in-out;
         }
 
         body,
@@ -75,8 +81,18 @@
             setTimeout(() => {
                 video_output.style.display = 'none'
                 video_playing = false
-                video_output.innerHTML=''
-                playNextSlide(media[counter])
+                video_output.innerHTML = ''
+                if(media[counter]){
+                    console.log("?")
+                    playNextSlide(media[counter])
+                }else if(media[0]){
+                    console.log("!")
+                    counter=0;
+                    playNextSlide(media[counter])
+                }else{
+                    console.log(",")
+                    handleDefault();
+                }
             }, 2000)
         }
 
@@ -99,14 +115,14 @@
                         key = res.key
                         defaultDuration = res.defaultDuration <= 0 ? 3000 : res.defaultDuration * 1000
                         if (!media.length) {
-                           
+
                         } else if (!video_playing && !presPlaying) {
                             playNextSlide(media[counter])
                         }
                     }
                 }).catch((err) => {
-                    console.log(err)
                     media = [];
+                    handleDefault();
                 });
         }
 
@@ -118,49 +134,69 @@
                 } catch (err) {
 
                 }
+                
                 presPlaying = true;
-                wrapper.style.opacity = 0;
-                setTimeout(() => {
-                    let fileExtension = file.fileName.substr(file.fileName.lastIndexOf('.')).toLowerCase();
-                    let fileType = determineType(fileExtension);
-                    duration = file.params.duration * 1000;
-                    if (fileType === 'image') {
-                        video_output.style.display = "none"
-                        video_output.innerHTML = '';
-                        image_output.style.display = 'block'
-                        image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + file.base64;
-                    } else if (fileType === 'video') {
-                        image_output.style.display = 'none'
-                        video_output.style.display = "block"
-                        let src = document.createElement('source')
-                        src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + file.base64)
-                        src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
-                        
-                        video_output.appendChild(src);
-                        video_output.load()
-                        try{
-                            video_output.play()
-                            video_playing = true;
-                        }catch(err){
-                            video_playing=false;
-                            console.log(err + "? ")
-                        }
-                        
+                if (!file.base64) {
+                    key=Math.random();
+                    counter++;
+                    if (media[counter]) {
+                        playNextSlide(media[counter])
+                    } else if (media[0]) {
+                        counter = 0;
+                        playNextSlide(media[counter])
+                    } else {
+                        handleDefault();
                     }
-                    wrapper.style.opacity = 1;
-                    setTimeout(() => {
-                        counter++;
-                        if (!media[counter]) {
-                            counter = 0;
-                        }
-                        if (!video_playing) {
-                            setTimeout(() => {
-                                playNextSlide(media[counter])
-                            }, duration || defaultDuration)
-                        }
-                    }, 2000)
+                } else {
+                    wrapper.style.opacity = 0;
 
-                }, 2000)
+                    setTimeout(() => {
+                        let fileExtension = file.fileName.substr(file.fileName.lastIndexOf('.')).toLowerCase();
+                        let fileType = determineType(fileExtension);
+                        duration = file.params.duration * 1000;
+                        if (fileType === 'image') {
+                            video_output.style.display = "none"
+                            video_output.innerHTML = '';
+                            image_output.style.display = 'block'
+                            image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + file.base64;
+                            wrapper.style.opacity = 1;
+                        } else if (fileType === 'video') {
+                            image_output.style.display = 'none'
+                            image_output.src='#'
+                            video_output.style.display = "block"
+                            let src = document.createElement('source')
+                            src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + file.base64)
+                            src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
+                            video_output.appendChild(src);
+                            video_output.load()
+                            wrapper.style.opacity = 1;
+                            try {
+                                video_output.play().catch(err=>{
+                                    console.log(err)
+                                    if(err){
+                                        handleVideoEnd();
+                                    }
+                                })
+                                video_playing = true;
+                            } catch (err) {
+                                video_playing = false;
+                            }
+                        }
+                        setTimeout(() => {
+                            counter++;
+                            if (!media[counter]) {
+                                counter = 0;
+                            }
+                            if (!video_playing) {
+                                setTimeout(() => {
+                                    playNextSlide(media[counter])
+                                }, duration || defaultDuration)
+                            }
+                        }, 2000)
+
+                    }, 2000)
+                }
+
             } else {
                 counter = 0;
                 if (media[counter]) {
@@ -171,10 +207,12 @@
             }
         }
         let handleDefault = () => {
-            if (image_output.src != '/defaultImage') {
+            if (!~image_output.src.indexOf('/defaultImage')) {
+                counter = 0;
                 wrapper.style.opacity = 0;
                 video_output.pause();
                 video_output.innerHTML = '';
+                console.log("?")
                 setTimeout(() => {
                     video_output.style.display = "none";
                     image_output.style.display = "block";
