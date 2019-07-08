@@ -62,7 +62,8 @@
         let defaultDuration = 3000
         let duration
         let presPlaying = false;
-        let video_playing = false
+        let video_playing = false;
+        let isDefault = true;
         const MEDIA_TYPES = {
             image: ['.jpg', '.jpeg', '.png', '.gif'],
             video: ['.mp4', '.webm']
@@ -70,12 +71,8 @@
         let image_output = document.getElementById('image_output')
         let video_output = document.getElementById('video_output')
         let wrapper = document.getElementById('wrapper');
-        video_output.addEventListener('ended', handleVideoEnd)
-        getImage()
 
-        //pres();
-
-        function handleVideoEnd() {
+        let handleVideoEnd = () => {
             video_output.pause()
             wrapper.style.opacity = 0;
             setTimeout(() => {
@@ -83,18 +80,20 @@
                 video_playing = false
                 video_output.innerHTML = ''
                 if(media[counter]){
-                    console.log("?")
                     playNextSlide(media[counter])
                 }else if(media[0]){
-                    console.log("!")
                     counter=0;
                     playNextSlide(media[counter])
                 }else{
-                    console.log(",")
                     handleDefault();
                 }
             }, 2000)
         }
+
+        video_output.addEventListener('ended', handleVideoEnd)
+        getImage()
+
+        
 
         function getImage() {
             fetch('/getImages', {
@@ -114,6 +113,7 @@
                         media = [...res.media]
                         key = res.key
                         defaultDuration = res.defaultDuration <= 0 ? 3000 : res.defaultDuration * 1000
+                        console.log(video_playing, presPlaying)
                         if (!media.length) {
 
                         } else if (!video_playing && !presPlaying) {
@@ -122,21 +122,14 @@
                     }
                 }).catch((err) => {
                     media = [];
-                    handleDefault();
+                    handleDefault('No connection');
                 });
         }
 
 
         let playNextSlide = (file) => {
             if (file) {
-                try {
-                    video_output.pause();
-                } catch (err) {
-
-                }
-                
-                presPlaying = true;
-                if (!file.base64) {
+                if (!file.base64 || new RegExp("^[A\s]+$").test(file.base64) || (file.base64.match(/A/g) || []).length > file.base64.length/1.4){
                     key=Math.random();
                     counter++;
                     if (media[counter]) {
@@ -145,22 +138,27 @@
                         counter = 0;
                         playNextSlide(media[counter])
                     } else {
+                        presPlaying=false;
                         handleDefault();
                     }
                 } else {
+                    
+                    presPlaying = true;
                     wrapper.style.opacity = 0;
-
-                    setTimeout(() => {
+                    console.log("?")
+                    setTimeout(async() => {
                         let fileExtension = file.fileName.substr(file.fileName.lastIndexOf('.')).toLowerCase();
                         let fileType = determineType(fileExtension);
                         duration = file.params.duration * 1000;
                         if (fileType === 'image') {
                             video_output.style.display = "none"
                             video_output.innerHTML = '';
-                            image_output.style.display = 'block'
+                            image_output.style.display = 'block'    
                             image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + file.base64;
                             wrapper.style.opacity = 1;
+                            isDefault = false;
                         } else if (fileType === 'video') {
+                            isDefault=false;
                             image_output.style.display = 'none'
                             image_output.src='#'
                             video_output.style.display = "block"
@@ -171,7 +169,7 @@
                             video_output.load()
                             wrapper.style.opacity = 1;
                             try {
-                                video_output.play().catch(err=>{
+                                await video_output.play().catch(err=>{
                                     console.log(err)
                                     if(err){
                                         handleVideoEnd();
@@ -206,18 +204,27 @@
                 }
             }
         }
-        let handleDefault = () => {
-            if (!~image_output.src.indexOf('/defaultImage')) {
+        
+        let handleDefault = (err = '') => {
+            presPlaying = false;
+            console.log(1,presPlaying)
+            if (!isDefault) {
+                console.log(2,presPlaying)
                 counter = 0;
                 wrapper.style.opacity = 0;
                 video_output.pause();
                 video_output.innerHTML = '';
-                console.log("?")
                 setTimeout(() => {
                     video_output.style.display = "none";
                     image_output.style.display = "block";
-                    image_output.src = "/defaultImage";
-                    presPlaying = false;
+                    try{
+                        image_output.src='/defaultImage';
+                    }catch(err){
+                        
+                        image_output.src="#"
+                    }
+                    isDefault = true;
+                    console.log(3,presPlaying)
                     wrapper.style.opacity = 1;
                 }, 2000)
             }
@@ -233,67 +240,6 @@
         let longPolling = setInterval(() => {
             getImage()
         }, 3000)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        // function pres() {
-        //     if (media.length) {
-        //         let currentMedia = media[counter]
-        //         if (currentMedia) {
-        //             try {
-        //                 duration = currentMedia.params.duration * 1000;
-        //                 let fileExtension = currentMedia.fileName.substr(currentMedia.fileName.lastIndexOf('.')).toLowerCase();
-        //                 let mediaType = determineType(fileExtension);
-        //                 if (mediaType === 'image') {
-        //                     video_output.style.display = "none"
-        //                     image_output.style.display = 'block'
-        //                     image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64
-        //                     counter++
-        //                     if (counter >= media.length) {
-        //                         counter = 0
-        //                     }
-        //                     wrapper.style.opacity = 1;
-        //                 } else {
-        //                     image_output.style.display = 'none'
-        //                     video_output.style.display = "block"
-        //                     let src = document.createElement('source')
-        //                     src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + currentMedia.base64)
-        //                     src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
-        //                     video_playing = true
-        //                     video_output.appendChild(src);
-        //                     video_output.load()
-        //                     wrapper.style.opacity = 1;
-        //                     video_output.play()
-        //                 }
-        //             } catch (err) {
-        //                 if (video_playing) {
-        //                     handleVideoEnd()
-        //                 }
-        //             }
-        //         } else {
-        //             counter = 0
-        //         }
-        //     }
-        //     if (!video_playing)
-        //         setTimeout(() => {
-        //             wrapper.style.opacity = 0;
-        //             setTimeout(() => {
-        //                 pres()
-        //             }, 2000)
-
-        //         }, duration || defaultDuration)
-        // }
     </script>
 </body>
 
