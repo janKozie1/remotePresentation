@@ -130,7 +130,7 @@
         let media = []
         let counter = 0
         let key = null
-        let defaultDuration = 3000
+        let defaultDuration = 15000
         let duration
         let presPlaying = false;
         let video_playing = false;
@@ -175,7 +175,7 @@
                 .then((e) => e.json())
                 .then((res) => {
                     if (res.key !== key) {
-                        media = [{ fileName: '.data', base64: 'a', params: { duration: 3 } }, ...res.media]
+                        media = [{ fileName: '.data', base64: 'a', params: { duration: '' } }, ...res.media]
                         key = res.key
                         defaultDuration = res.defaultDuration <= 0 ? 3000 : res.defaultDuration * 1000
                         if (!media.length) {
@@ -210,6 +210,7 @@
                     setTimeout(async () => {
                         let fileExtension = file.fileName.substr(file.fileName.lastIndexOf('.')).toLowerCase();
                         let fileType = determineType(fileExtension);
+                        duration = null;
                         duration = file.params.duration * 1000;
                         if (fileType === 'image') {
                             isDefault = false;
@@ -229,6 +230,7 @@
                                 video_output.play().then(e => {
                                     video_playing = true;
                                 }).catch(err => {
+                                    key = Math.random();
                                     console.log(err)
                                 })
                             } catch (err) {
@@ -290,8 +292,8 @@
                 case 'image':
                     data_output.style.display = "none"
                     video_output.style.display = "none"
-                    video_output.innerHTML = '';
                     image_output.style.display = 'block'
+                    video_output.innerHTML = '';
                     break
                 case 'video':
                     image_output.style.display = 'none'

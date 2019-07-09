@@ -65,19 +65,13 @@ app.listen(8080, () => {
 })
 
 
-
 function base64_encode(file) {
-    console.log(file)
     try {
         let bin = fs.readFileSync(file);
         return Buffer.from(bin).toString('base64');
     } catch (err) {
         return '';
     }
-
-}
-
-function getDayData() {
 
 }
 
@@ -138,7 +132,7 @@ function compare(a, b) {
     }
 }
 function findIndex(name) {
-    let firstDigit = name.match(/\d/) === -1 ? name[0] : name.match(/\d/);
+    let firstDigit = name.match(/\d/) == null ? name[0] : name.match(/\d/);
     let index = name.indexOf(firstDigit);
     let lastIndex = ~name.indexOf('_') ? name.indexOf('_') : name.lastIndexOf('.');
     return parseInt(name.substring(index, lastIndex));
