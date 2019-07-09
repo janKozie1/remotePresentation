@@ -20,7 +20,7 @@
         }
 
         body,
-        #wrapper {
+        .wrapper {
             width: 100vw;
             height: 100vh;
             display: flex;
@@ -31,36 +31,102 @@
             background: black;
         }
 
-        #wrapper {
+        .wrapper {
             opacity: 1;
             transition: opacity 2s ease-in-out;
         }
 
-        #wrapper > * {
+        .wrapper>* {
             display: none;
             width: 100%;
         }
 
-        #image_output {
-            display:block;
+        .image_output {
+            display: block;
         }
-        #data_output{
-            height:100%;
-            background:white;
+
+        .data_output {
+            height: 100%;
+            background: white;
+            align-items: center;
+            justify-content: flex-start;
+            flex-direction: column;
+            font-family: 'Arial';
+            position: relative;
+
+
+        }
+
+        .data_output img {
+            width: 400px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 0;
+        }
+
+        .data_output .data_container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            margin-top: 270px;
+            font-size: 2vmax;
+            text-align: center;
+        }
+
+        .data_container h3 {
+            padding: 30px 0;
+        }
+
+        .data_container p {
+            padding: 5px;
+        }
+
+        @media only screen and (max-width:400px) {
+            .data_output img {
+                width: 80%;
+            }
         }
     </style>
 </head>
 
 <body>
-    <div id="wrapper">
-        <img id="image_output" src="/defaultImage">
-        <video id="video_output"></video>
-        <div id="data_output">a</div>
+    <div class="wrapper">
+        <img class="image_output" src="/defaultImage">
+        <video class="video_output"></video>
+        <div class="data_output">
+            <img src="/defaultImage">
+            <div class="data_container">
+                <p class="data_date"></p>
+            </div>
+
+        </div>
     </div>
 
 
-    
+
     <script>
+        const MEDIA_TYPES = {
+            image: ['.jpg', '.jpeg', '.png', '.gif'],
+            video: ['.mp4', '.webm'],
+            data: ['.data']
+        }
+        const MONTHS = ['Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec', 'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień']
+        const DAYS = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota']
+
+        let currentDay = {
+            day: null,
+            dayIndex:null,
+            nameOfDay: '',
+            month: null,
+            monthIndex: null,
+            nameOfMonth:'',
+            year: null,
+            names: []
+        }
+
         let media = []
         let counter = 0
         let key = null
@@ -69,15 +135,13 @@
         let presPlaying = false;
         let video_playing = false;
         let isDefault = true;
-        const MEDIA_TYPES = {
-            image: ['.jpg', '.jpeg', '.png', '.gif'],
-            video: ['.mp4', '.webm'],
-            data: ['.data']
-        }
-        let image_output = document.getElementById('image_output')
-        let video_output = document.getElementById('video_output')
-        let data_output = document.getElementById('data_output')
-        let wrapper = document.getElementById('wrapper');
+
+        let data_container = document.querySelector('.data_container')
+        let image_output = document.querySelector('.image_output')
+        let video_output = document.querySelector('.video_output')
+        let data_output = document.querySelector('.data_output')
+        let date_text = document.querySelector('.data_date')
+        let wrapper = document.querySelector('.wrapper')
 
         let handleVideoEnd = () => {
             video_output.pause()
@@ -86,21 +150,18 @@
                 video_output.style.display = 'none'
                 video_playing = false
                 video_output.innerHTML = ''
-                if(media[counter]){
+                if (media[counter]) {
                     playNextSlide(media[counter])
-                }else if(media[0]){
-                    counter=0;
+                } else if (media[0]) {
+                    counter = 0;
                     playNextSlide(media[counter])
-                }else{
+                } else {
                     handleDefault();
                 }
             }, 2000)
         }
 
-        video_output.addEventListener('ended', handleVideoEnd)
-        getImage()
-
-        function getImage() {
+        let getImage = () => {
             fetch('/getImages', {
                 method: 'POST',
                 mode: 'cors',
@@ -114,7 +175,7 @@
                 .then((e) => e.json())
                 .then((res) => {
                     if (res.key !== key) {
-                        media = [{fileName:'.data', base64:'a',params:{duration:3}},...res.media]
+                        media = [{ fileName: '.data', base64: 'a', params: { duration: 3 } }, ...res.media]
                         key = res.key
                         defaultDuration = res.defaultDuration <= 0 ? 3000 : res.defaultDuration * 1000
                         if (!media.length) {
@@ -129,11 +190,10 @@
                 });
         }
 
-
         let playNextSlide = (file) => {
             if (file) {
-                if (!file.base64 || new RegExp("^[A\s]+$").test(file.base64) || (file.base64.match(/A/g) || []).length > file.base64.length/1.1){
-                    key=Math.random();
+                if (!file.base64 || new RegExp("^[A\s]+$").test(file.base64) || (file.base64.match(/A/g) || []).length > file.base64.length / 1.1) {
+                    key = Math.random();
                     counter++;
                     if (media[counter]) {
                         playNextSlide(media[counter])
@@ -141,28 +201,24 @@
                         counter = 0;
                         playNextSlide(media[counter])
                     } else {
-                        presPlaying=false;
+                        presPlaying = false;
                         handleDefault();
                     }
                 } else {
                     presPlaying = true;
                     wrapper.style.opacity = 0;
-                    setTimeout(async() => {
+                    setTimeout(async () => {
                         let fileExtension = file.fileName.substr(file.fileName.lastIndexOf('.')).toLowerCase();
                         let fileType = determineType(fileExtension);
                         duration = file.params.duration * 1000;
                         if (fileType === 'image') {
-                            video_output.style.display = "none"
-                            video_output.innerHTML = '';
-                            image_output.style.display = 'block'    
+                            isDefault = false;
+                            showMedia(fileType)
                             image_output.src = `data:image/${fileExtension.replace(/\./g, '')};base64,` + file.base64;
                             wrapper.style.opacity = 1;
-                            isDefault = false;
                         } else if (fileType === 'video') {
-                            isDefault=false;
-                            image_output.style.display = 'none'
-                            image_output.src='#'
-                            video_output.style.display = "block"
+                            isDefault = false;
+                            showMedia(fileType)
                             let src = document.createElement('source')
                             src.setAttribute('src', `data:video/${fileExtension.replace(/\./g, '')};base64,` + file.base64)
                             src.setAttribute('type', `video/${fileExtension.replace(/\./g, '')}`)
@@ -170,20 +226,17 @@
                             video_output.load()
                             wrapper.style.opacity = 1;
                             try {
-                                video_output.play().then(e=>{
-                                    video_playing=true;
-                                }).catch(err =>{
+                                video_output.play().then(e => {
+                                    video_playing = true;
+                                }).catch(err => {
                                     console.log(err)
                                 })
                             } catch (err) {
                                 video_playing = false;
                             }
-                        }else if(fileType === 'data'){
-                           
-                            image_output.style.display="none";
-                            video_output.style.display="none";
+                        } else if (fileType === 'data') {
+                            showMedia(fileType)
                             wrapper.style.opacity = 1;
-                            data_output.style.display="flex";
                         }
                         setTimeout(() => {
                             counter++;
@@ -209,7 +262,7 @@
                 }
             }
         }
-        
+
         let handleDefault = (err = '') => {
             presPlaying = false;
             if (!isDefault) {
@@ -220,31 +273,110 @@
                 setTimeout(() => {
                     video_output.style.display = "none";
                     image_output.style.display = "block";
-                    try{
-                        image_output.src='/defaultImage';
-                    }catch(err){
-                        
-                        image_output.src="#"
+                    try {
+                        image_output.src = '/defaultImage';
+                    } catch (err) {
+
+                        image_output.src = "#"
                     }
                     isDefault = true;
                     wrapper.style.opacity = 1;
                 }, 2000)
             }
         }
+
+        let showMedia = (visibleOutput) => {
+            switch (visibleOutput) {
+                case 'image':
+                    data_output.style.display = "none"
+                    video_output.style.display = "none"
+                    video_output.innerHTML = '';
+                    image_output.style.display = 'block'
+                    break
+                case 'video':
+                    image_output.style.display = 'none'
+                    image_output.src = '#'
+                    data_output.style.display = 'none'
+                    video_output.style.display = "block"
+                    break
+                case 'data':
+                    image_output.style.display = 'none'
+                    image_output.src = '#'
+                    video_output.style.display = "none"
+                    video_output.innerHTML = ''
+                    data_output.style.display = 'flex'
+                    break;
+                default:
+                    break;
+            }
+        }
+
         let determineType = (fileExtension) => {
             if (MEDIA_TYPES.image.includes(fileExtension)) {
                 return 'image'
             } else if (MEDIA_TYPES.video.includes(fileExtension)) {
                 return 'video'
-            }else if (MEDIA_TYPES.data.includes(fileExtension)) {
+            } else if (MEDIA_TYPES.data.includes(fileExtension)) {
                 return 'data'
             }
+
+        }
+
+        let getDayData = () => {
             
+            if (currentDay.day != new Date().getDate() || !date_text.innerText) {
+                updateDate();
+                let formatedDate = {
+                    day: currentDay.day.toString().length == 1 ? '0' + currentDay.day : currentDay.day,
+                    month: currentDay.month.toString().length == 1 ? '0' + currentDay.month : currentDay.month,
+                }
+                date_text.innerText = `${currentDay.nameOfDay}, ${formatedDate.day}.${formatedDate.month}.${currentDay.year}`
+            }
+            fetch('/getDay', {
+                method: "POST",
+            }).then(e => e.json()).then(({ data }) => {
+                currentDay.names = data.name_pl.split(", ");
+                if (currentDay.names.length) {
+                    let header = document.createElement('h3');
+                    header.innerText = 'Dzisiaj imieniny obchodzą: '
+                    data_container.appendChild(header)
+                    for (let name of currentDay.names) {
+                        let p = document.createElement("p")
+                        p.innerText = name;
+                        p.classList.add('name');
+                        data_container.appendChild(p);
+                    }
+                }
+            }).catch(err => {
+                console.log(err)
+            })
         }
 
         let longPolling = setInterval(() => {
+            if (!currentDay.names[0] || currentDay.day != new Date().getDate()) {
+                getDayData();
+            }
             getImage()
-        }, 3000)
+        }, 4000)
+
+        let updateDate = () => {
+            let date = new Date();
+            currentDay = {
+                day: date.getDate(),
+                dayIndex: date.getDay(),
+                nameOfDay: DAYS[date.getDay()],
+                month: date.getMonth() + 1,
+                monthIndex: date.getMonth(),
+                nameOfMonth: MONTHS[date.getMonth()],
+                year: date.getFullYear(),
+                names: []
+            }
+        }
+
+        video_output.addEventListener('ended', handleVideoEnd);
+        updateDate();
+        getDayData()
+        getImage()
     </script>
 </body>
 
