@@ -1,0 +1,18 @@
+2019-07-10 09:18:04 - Starting C:\Program Files\nodejs\node.exe  --harmony --max_old_space_size=4096 C:\Users\in99037\Documents\scripts\prezentacja\node_modules\node-windows\lib\wrapper.js --file C:\Users\in99037\Documents\scripts\prezentacja\server.js --log "Presentation server wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2019-07-10 09:18:04 - Started 5700
+2019-07-10 09:18:19 - Stopping presentationserver.exe
+2019-07-10 09:18:19 - ProcessKill 5700
+2019-07-10 09:18:20 - Shutdown exception
+Message:Trwa proces zamykania systemu.
+
+Stacktrace:   w System.Runtime.InteropServices.Marshal.ThrowExceptionForHRInternal(Int32 errorCode, IntPtr errorInfo)
+   w System.Management.ManagementScope.InitializeGuts(Object o)
+   w System.Management.ManagementScope.Initialize()
+   w System.Management.ManagementObjectSearcher.Initialize()
+   w System.Management.ManagementObjectSearcher.Get()
+   w winsw.WrapperService.GetChildPids(Int32 pid)
+   w winsw.WrapperService.StopProcessAndChildren(Int32 pid)
+   w winsw.WrapperService.StopIt()
+   w winsw.WrapperService.OnShutdown()
+2019-07-10 09:18:36 - Starting C:\Program Files\nodejs\node.exe  --harmony --max_old_space_size=4096 C:\Users\in99037\Documents\scripts\prezentacja\node_modules\node-windows\lib\wrapper.js --file C:\Users\in99037\Documents\scripts\prezentacja\server.js --log "Presentation server wrapper" --grow 0.25 --wait 1 --maxrestarts 3 --abortonerror n --stopparentfirst undefined
+2019-07-10 09:18:36 - Started 4476

@@ -4,9 +4,9 @@ let cors = require('cors');
 let path = require('path');
 let fs = require('fs');
 let ip = require("ip");
-let axios = require('axios')
+let axios = require('axios');
+let service = require('os-service');
 let app = express();
-
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -52,8 +52,8 @@ app.post("/getImages", (req, res) => {
 })
 app.post("/getDay", (req, res) => {
     axios.get('https://api.abalin.net/get/today?country=pl')
-        .then(({data}) => {
-           res.json(data)
+        .then(({ data }) => {
+            res.json(data)
         })
         .catch(error => {
             console.log(error);
