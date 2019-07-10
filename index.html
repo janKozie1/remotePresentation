@@ -175,7 +175,8 @@
                 .then((e) => e.json())
                 .then((res) => {
                     if (res.key !== key) {
-                        media = [{ fileName: '.data', base64: 'a', params: { duration: '' } }, ...res.media]
+                        console.log(res.media.map(e=>e.fileName))
+                        media = [{ fileName: '.data', base64: 'a', params: { duration: 0 } }, ...res.media]
                         key = res.key
                         defaultDuration = res.defaultDuration <= 0 ? 3000 : res.defaultDuration * 1000
                         if (!media.length) {
@@ -210,8 +211,8 @@
                     setTimeout(async () => {
                         let fileExtension = file.fileName.substr(file.fileName.lastIndexOf('.')).toLowerCase();
                         let fileType = determineType(fileExtension);
-                        duration = null;
-                        duration = file.params.duration * 1000;
+                        duration = 0;
+                        duration = file.params.duration ? file.params.duration * 1000 : defaultDuration;
                         if (fileType === 'image') {
                             isDefault = false;
                             showMedia(fileType)
@@ -231,7 +232,7 @@
                                     video_playing = true;
                                 }).catch(err => {
                                     key = Math.random();
-                                    console.log(err)
+                                    console.log(JSON.stringify(err)) 
                                 })
                             } catch (err) {
                                 video_playing = false;
@@ -274,11 +275,11 @@
                 video_output.innerHTML = '';
                 setTimeout(() => {
                     video_output.style.display = "none";
+                    data_output.style.display="none";
                     image_output.style.display = "block";
                     try {
                         image_output.src = '/defaultImage';
                     } catch (err) {
-
                         image_output.src = "#"
                     }
                     isDefault = true;

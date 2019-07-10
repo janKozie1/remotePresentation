@@ -5,7 +5,6 @@ let path = require('path');
 let fs = require('fs');
 let ip = require("ip");
 let axios = require('axios');
-let service = require('os-service');
 let app = express();
 
 app.use(express.json());
